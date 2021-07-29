@@ -8,7 +8,6 @@ from starlette.status import HTTP_200_OK
 from . import crud, models, schema
 from .database import SessionLocal, engine
 from .version import __version__
-from .config import DATABASE_URL
 from app import version
 
 models.Base.metadata.create_all(bind=engine)
@@ -27,9 +26,9 @@ def get_db():
 @app.get("/health/")
 def health():
     return JSONResponse(
-        content={"status":"ok", "version":__version__},
-        status_code=HTTP_200_OK
+        content={"status": "ok", "version": __version__}, status_code=HTTP_200_OK
     )
+
 
 @app.get("/tools/", response_model=List[schema.Tool])
 def get_tools(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
@@ -40,7 +39,8 @@ def get_tools(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
 @app.post("/tools/", response_model=schema.Tool)
 def create_tool(tool: schema.CreateTool, db: Session = Depends(get_db)):
     db_tool = crud.get_tools_by_name(db=db, name=tool.name)
-    if db_tool is not None:
+    print(db_tool)
+    if len(db_tool) != 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST, detail="Tool already in database"
         )
@@ -49,12 +49,11 @@ def create_tool(tool: schema.CreateTool, db: Session = Depends(get_db)):
 
 @app.delete("/tools/", response_model=schema.Tool)
 def delete_tool(tool_id: int, db: Session = Depends(get_db)):
-    db_tool = crud.get_tool(db, tool_id==tool_id)
+    db_tool = crud.get_tool(db, tool_id=tool_id)
     if db_tool is None:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail="Tool not found"
         )
     else:
         crud.remove_tool(db=db, tool_id=tool_id)
-
-    return db_tool
+    return db_tool[0]

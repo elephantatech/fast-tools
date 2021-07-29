@@ -39,10 +39,6 @@ def add_tool(db: Session, tool: schema.CreateTool):
 
 def remove_tool(db: Session, tool_id: int) -> dict:
     affected_rows = db.query(models.Tool).filter(models.Tool.id == tool_id).delete()
-
-    if affected_rows == 0:
-        raise Exception(f"Tool ID:{tool_id} not found in database")
-    else:
-        db.commit()
+    db.commit()
 
     return {"deleted": affected_rows}
